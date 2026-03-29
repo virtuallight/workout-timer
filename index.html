@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a1a">
+    <title>Workout Timer</title>
+    <link rel="manifest" href="data:application/manifest+json,{&quot;name&quot;:&quot;Workout Timer&quot;,&quot;short_name&quot;:&quot;Timer&quot;,&quot;start_url&quot;:&quot;/&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#000&quot;,&quot;theme_color&quot;:&quot;#1a1a1a&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,&lt;svg xmlns=\&quot;http://www.w3.org/2000/svg\&quot; viewBox=\&quot;0 0 192 192\&quot;&gt;&lt;rect fill=\&quot;%231a1a1a\&quot; width=\&quot;192\&quot; height=\&quot;192\&quot;/&gt;&lt;circle cx=\&quot;96\&quot; cy=\&quot;96\&quot; r=\&quot;70\&quot; fill=\&quot;none\&quot; stroke=\&quot;%234a90e2\&quot; stroke-width=\&quot;8\&quot;/&gt;&lt;line x1=\&quot;96\&quot; y1=\&quot;50\&quot; x2=\&quot;96\&quot; y2=\&quot;80\&quot; stroke=\&quot;%234a90e2\&quot; stroke-width=\&quot;6\&quot; stroke-linecap=\&quot;round\&quot;/&gt;&lt;line x1=\&quot;96\&quot; y1=\&quot;96\&quot; x2=\&quot;130\&quot; y2=\&quot;96\&quot; stroke=\&quot;%234a90e2\&quot; stroke-width=\&quot;6\&quot; stroke-linecap=\&quot;round\&quot;/&gt;&lt;/svg&gt;&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #111118;
+            color: #fff;
+            overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        input[type="number"] {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .setup-screen {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+            padding: 60px 20px 20px;
+            justify-content: flex-start;
+            overflow-y: auto;
+            -webkit-user-select: none;
+            background: #111118;
+        }
+
+        .setup-screen.active {
+            display: flex;
+        }
+
+        .exercises-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .emom-number-field {
+            margin-bottom: 4px;
+        }
+
+        .emom-number-field input {
+            width: 100%;
+            padding: 12px;
+            font-size: 24px;
+            font-weight: 600;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.06);
+            border: none;
+            border-radius: 10px;
+            color: #ddd;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -moz-appearance: textfield;
+        }
+
+        .emom-number-field input::-webkit-inner-spin-button,
+        .emom-number-field input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .exercise-input {
+            display: block;
+            width: 100%;
+            padding: 12px 14px;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Menlo, monospace;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .exercise-input::placeholder {
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .exercise-input:focus {
+            outline: none;
+            filter: brightness(1.15);
+        }
+
+        .divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.06);
+            margin: 12px 0;
+        }
+
+        .start-button {
+            padding: 16px;
+            background: #fff;
+            border: none;
+            border-radius: 14px;
+            color: #111;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: auto;
+            margin-bottom: 20px;
+            letter-spacing: 0.3px;
+        }
+
+        .start-button:active {
+            background: #e0e0e0;
+        }
+
+        .timer-screen {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .timer-screen.active {
+            display: flex;
+        }
+
+        .timer-display {
+            text-align: center;
+            z-index: 1;
+        }
+
+        .timer-time {
+            font-size: 120px;
+            font-weight: 300;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1;
+            margin-bottom: 20px;
+            letter-spacing: -2px;
+        }
+
+        .timer-time.countdown {
+            color: #ffe0d0;
+            text-shadow: 0 0 30px rgba(255, 224, 208, 0.5);
+        }
+
+        .weight-reps {
+            font-size: 56px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #fff;
+        }
+
+        .weight-reps .weight {
+            color: #e0e0e0;
+        }
+
+        .weight-reps .reps {
+            color: #fff;
+        }
+
+        .next-weight {
+            font-size: 14px;
+            color: #b0b0b0;
+            margin-top: 15px;
+        }
+
+        .progress-dots {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 40px;
+            z-index: 2;
+            position: relative;
+            max-width: 200px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .dot.active {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .nav-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            z-index: 10;
+            height: 80px;
+        }
+
+        .nav-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .nav-btn:active {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-btn.dark {
+            color: rgba(0, 0, 0, 0.25);
+        }
+
+        .nav-btn.dark:active {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        .break-screen {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #f2f2f2;
+        }
+
+        .break-screen.active {
+            display: flex;
+        }
+
+        .break-timer {
+            font-size: 120px;
+            font-weight: 300;
+            color: #222;
+            line-height: 1;
+            letter-spacing: -2px;
+        }
+
+        .break-timer.countdown {
+            color: #ff8c42;
+            text-shadow: 0 0 30px rgba(255, 140, 66, 0.3);
+        }
+
+        .pause-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            display: none;
+        }
+
+        .pause-overlay.active {
+            display: flex;
+        }
+
+        .pause-icon {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pause-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .pause-text {
+            font-size: 18px;
+            color: #fff;
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        @supports (padding: max(0px)) {
+            .setup-screen {
+                padding-left: max(20px, env(safe-area-inset-left));
+                padding-right: max(20px, env(safe-area-inset-right));
+                padding-bottom: max(20px, env(safe-area-inset-bottom));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-screen active">
+
+        <div class="exercises-section">
+            <div class="emom-number-field">
+                <input type="number" id="emomX" value="21" min="1" max="60">
+            </div>
+
+            <input type="text" class="exercise-input" id="exercise1" data-color="1a4a8a" style="background:#1a4a8a; color:#fff; border-color:#1a4a8a;">
+            <input type="text" class="exercise-input" id="exercise2" data-color="1a6b50" style="background:#1a6b50; color:#fff; border-color:#1a6b50;">
+            <input type="text" class="exercise-input" id="exercise3" data-color="8a2a40" style="background:#8a2a40; color:#fff; border-color:#8a2a40;">
+
+            <div class="divider"></div>
+
+            <div class="emom-number-field">
+                <input type="number" id="emomY" value="14" min="1" max="60">
+            </div>
+
+            <input type="text" class="exercise-input" id="exercise4" data-color="1a4a8a" style="background:#1a4a8a; color:#fff; border-color:#1a4a8a;">
+            <input type="text" class="exercise-input" id="exercise5" data-color="1a6b50" style="background:#1a6b50; color:#fff; border-color:#1a6b50;">
+        </div>
+
+        <button class="start-button" id="startButton">Start</button>
+        <div id="errorMessage" class="error-message"></div>
+    </div>
+
+    <div class="timer-screen">
+        <div class="timer-display">
+            <div class="weight-reps" id="weightReps"></div>
+            <div class="timer-time" id="timerTime">0:00</div>
+            <div class="next-weight" id="nextWeight"></div>
+        </div>
+        <div class="progress-dots" id="progressDots"></div>
+        <div class="nav-bar">
+            <button class="nav-btn" id="prevBtn">← prev</button>
+            <button class="nav-btn" id="pauseBtn">pause</button>
+            <button class="nav-btn" id="nextBtn">next →</button>
+        </div>
+    </div>
+
+    <div class="break-screen">
+        <div class="break-timer" id="breakTimer">0:00</div>
+        <div class="nav-bar">
+            <button class="nav-btn dark" id="breakPrevBtn">← prev</button>
+            <button class="nav-btn dark" id="breakPauseBtn">pause</button>
+            <button class="nav-btn dark" id="breakNextBtn">next →</button>
+        </div>
+    </div>
+
+    <div class="pause-overlay">
+        <div class="pause-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+        </div>
+        <div class="pause-text">Tap to resume</div>
+    </div>
+
+
+    <script>
+        // ===== PWA Service Worker Registration =====
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+const CACHE_NAME = 'workout-timer-v1';
+const urlsToCache = ['/'];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(CACHE_NAME));
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(Promise.resolve());
+});
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request).catch(() => {
+        return new Response('Offline - page not in cache');
+      });
+    })
+  );
+});
+            `;
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl).catch(() => {});
+        }
+
+        // ===== App State =====
+        const state = {
+            setupComplete: false,
+            isWorkingOut: false,
+            isPaused: false,
+            isBreak: false,
+            currentExerciseIndex: 0,
+            currentMinute: 0,
+            currentSecond: 0,
+            emomX: 21,
+            emomY: 14,
+            exercises: [],
+            parsedExercises: [],
+            wakeLock: null,
+            completedMinutes: 0,
+            currentPart: 1,
+            breakMinute: 0,
+        };
+
+        const colors = {
+            '1a4a8a': '#1a4a8a',
+            '1a6b50': '#1a6b50',
+            '8a2a40': '#8a2a40',
+        };
+
+        const colorDarker = {
+            '1a4a8a': '#0d2644',
+            '1a6b50': '#0d3828',
+            '8a2a40': '#440d1f',
+        };
+
+        const colorDarkerMid = {
+            '1a4a8a': '#1a4a8a',
+            '1a6b50': '#1a6b50',
+            '8a2a40': '#8a2a40',
+        };
+
+        // ===== Audio Context Setup =====
+        let audioContext;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function beep(frequency = 800, duration = 150, volume = 0.3) {
+            if (!audioContext) return;
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc.frequency.value = frequency;
+            gain.gain.setValueAtTime(volume, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + duration / 1000);
+
+            osc.start(now);
+            osc.stop(now + duration / 1000);
+        }
+
+        function playBeep(isLoud = false) {
+            initAudio();
+            if (isLoud) {
+                beep(1000, 200, 0.4);
+            } else {
+                beep(800, 150, 0.3);
+            }
+        }
+
+        // ===== Parse Exercise Notation =====
+        function parseExerciseNotation(notation) {
+            if (!notation || typeof notation !== 'string') return [];
+            const segments = notation.trim().split(/\s+/).filter(s => s.length > 0);
+            return segments.map(seg => {
+                const parts = seg.split('*');
+                return {
+                    weight: parts[0] || '0',
+                    reps: parts[1] || '',
+                    rounds: parseInt(parts[2]) || 1,
+                };
+            });
+        }
+
+        // ===== Get Exercise Details at Index =====
+        function getExerciseAtIndex(exerciseIndex) {
+            if (!state.parsedExercises[exerciseIndex]) {
+                return null;
+            }
+            const notations = state.parsedExercises[exerciseIndex];
+            if (notations.length === 0) return null;
+
+            const roundOffset = state.currentMinute;
+            let totalRounds = 0;
+            for (let i = 0; i < notations.length; i++) {
+                totalRounds += notations[i].rounds;
+            }
+
+            if (roundOffset >= totalRounds) {
+                return null;
+            }
+
+            let roundIndex = 0;
+            let accum = 0;
+            for (let i = 0; i < notations.length; i++) {
+                if (accum + notations[i].rounds > roundOffset) {
+                    roundIndex = i;
+                    break;
+                }
+                accum += notations[i].rounds;
+            }
+
+            const current = notations[roundIndex];
+            let next = null;
+            if (roundOffset + 1 < totalRounds) {
+                let nextAccum = 0;
+                for (let i = 0; i < notations.length; i++) {
+                    if (nextAccum + notations[i].rounds > roundOffset + 1) {
+                        next = notations[i];
+                        break;
+                    }
+                    nextAccum += notations[i].rounds;
+                }
+            }
+
+            return { current, next };
+        }
+
+        // ===== Load Configuration =====
+        function loadConfig() {
+            const saved = localStorage.getItem('workoutConfig');
+            if (saved) {
+                const config = JSON.parse(saved);
+                document.getElementById('emomX').value = config.emomX || 21;
+                document.getElementById('emomY').value = config.emomY || 14;
+                for (let i = 1; i <= 5; i++) {
+                    const el = document.getElementById(`exercise${i}`);
+                    if (el) el.value = config[`exercise${i}`] || '';
+                }
+            }
+        }
+
+        function saveConfig() {
+            const config = {
+                emomX: parseInt(document.getElementById('emomX').value),
+                emomY: parseInt(document.getElementById('emomY').value),
+            };
+            for (let i = 1; i <= 5; i++) {
+                config[`exercise${i}`] = document.getElementById(`exercise${i}`).value;
+            }
+            localStorage.setItem('workoutConfig', JSON.stringify(config));
+        }
+
+        // ===== Setup Screen Event Listeners =====
+        const exerciseInputs = document.querySelectorAll('.exercise-input');
+        exerciseInputs.forEach((input) => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    input.blur();
+                }
+            });
+        });
+
+        document.getElementById('emomX').addEventListener('change', saveConfig);
+        document.getElementById('emomY').addEventListener('change', saveConfig);
+        exerciseInputs.forEach(input => {
+            input.addEventListener('change', saveConfig);
+        });
+
+        // ===== Start Button =====
+        document.getElementById('startButton').addEventListener('click', () => {
+            const emomX = parseInt(document.getElementById('emomX').value);
+            const emomY = parseInt(document.getElementById('emomY').value);
+            const ex1 = document.getElementById('exercise1').value;
+            const ex2 = document.getElementById('exercise2').value;
+            const ex3 = document.getElementById('exercise3').value;
+            const ex4 = document.getElementById('exercise4').value;
+            const ex5 = document.getElementById('exercise5').value;
+
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = '';
+
+            if (!emomX || emomX < 3 || !Number.isInteger(emomX) || emomX % 3 !== 0) {
+                errorEl.textContent = 'First EMOM must be a positive multiple of 3';
+                return;
+            }
+
+            if (!emomY || emomY < 2 || !Number.isInteger(emomY) || emomY % 2 !== 0) {
+                errorEl.textContent = 'Second EMOM must be a positive multiple of 2';
+                return;
+            }
+
+            if (!ex1 || !ex2 || !ex3 || !ex4 || !ex5) {
+                errorEl.textContent = 'All exercises must have notation';
+                return;
+            }
+
+            state.emomX = emomX;
+            state.emomY = emomY;
+            state.exercises = [ex1, ex2, ex3, ex4, ex5];
+            state.parsedExercises = state.exercises.map(parseExerciseNotation);
+
+            // Validate parsed exercises
+            for (let i = 0; i < state.parsedExercises.length; i++) {
+                if (state.parsedExercises[i].length === 0) {
+                    errorEl.textContent = `Exercise ${i + 1} has invalid notation`;
+                    return;
+                }
+            }
+
+            state.setupComplete = true;
+            state.isWorkingOut = true;
+            state.isPaused = false;
+            state.isBreak = false;
+            state.currentPart = 1;
+            state.completedMinutes = 0;
+            state.breakMinute = 0;
+            state.currentExerciseIndex = 0;
+            state.currentMinute = 0;
+            state.currentSecond = 0;
+
+            document.querySelector('.setup-screen').classList.remove('active');
+            document.querySelector('.timer-screen').classList.add('active');
+
+            playBeep(false);
+
+            requestWakeLock();
+            updateDisplay();
+            startTimer();
+        });
+
+        // ===== Timer Logic =====
+        let timerInterval;
+
+        // Derive exercise index and round from completedMinutes
+        function syncExerciseState() {
+            const numEx = state.currentPart === 1 ? 3 : 2;
+            const startIdx = state.currentPart === 1 ? 0 : 3;
+            state.currentExerciseIndex = (state.completedMinutes % numEx) + startIdx;
+            // currentMinute = which round this exercise is on (used by getExerciseAtIndex)
+            state.currentMinute = Math.floor(state.completedMinutes / numEx);
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (state.isPaused) return;
+
+                state.currentSecond++;
+                if (state.currentSecond >= 60) {
+                    state.currentSecond = 0;
+
+                    if (state.isBreak) {
+                        state.breakMinute++;
+                        if (state.breakMinute >= 2) {
+                            // Break complete → Part 2
+                            state.isBreak = false;
+                            state.currentPart = 2;
+                            state.completedMinutes = 0;
+                            syncExerciseState();
+                            document.querySelector('.break-screen').classList.remove('active');
+                            document.querySelector('.timer-screen').classList.add('active');
+                            playBeep(false);
+                        }
+                    } else {
+                        state.completedMinutes++;
+                        const totalForPart = state.currentPart === 1 ? state.emomX : state.emomY;
+
+                        if (state.completedMinutes >= totalForPart) {
+                            if (state.currentPart === 1) {
+                                // Part 1 done → break
+                                state.isBreak = true;
+                                state.breakMinute = 0;
+                                document.querySelector('.timer-screen').classList.remove('active');
+                                document.querySelector('.break-screen').classList.add('active');
+                                playBeep(false);
+                            } else {
+                                workoutComplete();
+                                return;
+                            }
+                        } else {
+                            syncExerciseState();
+                            playBeep(false);
+                        }
+                    }
+                }
+
+                handleSecondLogic();
+                updateDisplay();
+            }, 1000);
+        }
+
+        function handleSecondLogic() {
+            if (state.isPaused) return;
+
+            const sec = state.currentSecond;
+
+            if (state.isBreak) {
+                if (sec === 57 && state.breakMinute === 1) {
+                    playBeep(false);
+                } else if (sec === 58 && state.breakMinute === 1) {
+                    playBeep(false);
+                } else if (sec === 59 && state.breakMinute === 1) {
+                    playBeep(true);
+                }
+            } else {
+                if (sec === 57) {
+                    playBeep(false);
+                } else if (sec === 58) {
+                    playBeep(false);
+                } else if (sec === 59) {
+                    playBeep(true);
+                }
+            }
+        }
+
+        function workoutComplete() {
+            clearInterval(timerInterval);
+            state.isWorkingOut = false;
+            releaseWakeLock();
+            document.querySelector('.timer-screen').classList.remove('active');
+            document.querySelector('.setup-screen').classList.add('active');
+            document.getElementById('errorMessage').textContent = 'Workout Complete!';
+        }
+
+        // ===== Display Updates =====
+        function updateDisplay() {
+            updateTimerDisplay();
+            updateWeightReps();
+            updateProgressDots();
+        }
+
+        function updateTimerDisplay() {
+            const timerEl = document.getElementById('timerTime');
+            const breakTimerEl = document.getElementById('breakTimer');
+
+            const isCounting = state.currentSecond >= 57;
+
+            if (state.isBreak) {
+                const time = formatTime(state.breakMinute, state.currentSecond);
+                breakTimerEl.textContent = time;
+                if (isCounting && state.breakMinute === 1) {
+                    breakTimerEl.classList.add('countdown');
+                } else {
+                    breakTimerEl.classList.remove('countdown');
+                }
+            } else {
+                const time = formatTime(0, state.currentSecond);
+                timerEl.textContent = time;
+                if (isCounting) {
+                    timerEl.classList.add('countdown');
+                } else {
+                    timerEl.classList.remove('countdown');
+                }
+            }
+        }
+
+        function formatTime(minutes, seconds) {
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateWeightReps() {
+            if (state.isBreak) return;
+
+            const ex = getExerciseAtIndex(state.currentExerciseIndex);
+            if (!ex) {
+                document.getElementById('weightReps').textContent = '';
+                document.getElementById('nextWeight').textContent = '';
+                return;
+            }
+
+            const current = ex.current;
+            const next = ex.next;
+
+            let weightRepsHTML = '';
+            if (current.weight === '0') {
+                weightRepsHTML = `<span class="reps">${current.reps}</span>`;
+            } else {
+                weightRepsHTML = `<span class="weight">${current.weight}</span> × <span class="reps">${current.reps}</span>`;
+            }
+            document.getElementById('weightReps').innerHTML = weightRepsHTML;
+
+            let nextHTML = '';
+            if (next && (next.weight !== current.weight || next.reps !== current.reps)) {
+                if (next.weight === '0') {
+                    nextHTML = `next: ${next.reps}`;
+                } else {
+                    nextHTML = `next: ${next.weight} × ${next.reps}`;
+                }
+            }
+            document.getElementById('nextWeight').textContent = nextHTML;
+        }
+
+        function updateProgressDots() {
+            const dotsContainer = document.getElementById('progressDots');
+            dotsContainer.innerHTML = '';
+
+            const totalDots = state.currentPart === 1 ? state.emomX : state.emomY;
+            const numRows = state.currentPart === 1 ? 3 : 2;
+            const dotsPerRow = Math.ceil(totalDots / numRows);
+
+            // 8px dot + 8px gap; last dot in row has no gap
+            dotsContainer.style.maxWidth = (dotsPerRow * 16 - 8) + 'px';
+
+            for (let i = 0; i < totalDots; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                if (i < state.completedMinutes) {
+                    dot.classList.add('active');
+                }
+                dotsContainer.appendChild(dot);
+            }
+        }
+
+        // ===== Navigation =====
+        function togglePause() {
+            if (!state.isWorkingOut) return;
+            state.isPaused = !state.isPaused;
+            document.querySelector('.pause-overlay').classList.toggle('active');
+            if (state.isPaused) {
+                releaseWakeLock();
+            } else {
+                requestWakeLock();
+            }
+        }
+
+        // Pause buttons
+        document.getElementById('pauseBtn').addEventListener('click', togglePause);
+        document.getElementById('breakPauseBtn').addEventListener('click', togglePause);
+
+        // Prev buttons
+        document.getElementById('prevBtn').addEventListener('click', () => handlePrev());
+        document.getElementById('breakPrevBtn').addEventListener('click', () => handlePrev());
+
+        // Next buttons
+        document.getElementById('nextBtn').addEventListener('click', () => handleNext());
+        document.getElementById('breakNextBtn').addEventListener('click', () => handleNext());
+
+        // Tap on pause overlay to resume
+        document.querySelector('.pause-overlay').addEventListener('click', togglePause);
+
+        // Swipe support for touch devices
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isSwiping = false;
+
+        document.addEventListener('touchstart', (e) => {
+            if (!state.isWorkingOut) return;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            isSwiping = false;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            if (!state.isWorkingOut) return;
+            if (e.target.closest('.nav-bar')) return;
+
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+
+            if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                isSwiping = true;
+                if (deltaX > 0) {
+                    handleNext();
+                } else {
+                    handlePrev();
+                }
+            }
+        });
+
+        function handleNext() {
+            if (state.isBreak) {
+                // Skip break → Part 2
+                state.isBreak = false;
+                state.currentPart = 2;
+                state.completedMinutes = 0;
+                state.currentSecond = 0;
+                syncExerciseState();
+                document.querySelector('.break-screen').classList.remove('active');
+                document.querySelector('.timer-screen').classList.add('active');
+            } else {
+                state.completedMinutes++;
+                state.currentSecond = 0;
+                const totalForPart = state.currentPart === 1 ? state.emomX : state.emomY;
+
+                if (state.completedMinutes >= totalForPart) {
+                    if (state.currentPart === 1) {
+                        state.isBreak = true;
+                        state.breakMinute = 0;
+                        document.querySelector('.timer-screen').classList.remove('active');
+                        document.querySelector('.break-screen').classList.add('active');
+                    } else {
+                        workoutComplete();
+                        return;
+                    }
+                } else {
+                    syncExerciseState();
+                }
+            }
+            updateDisplay();
+        }
+
+        function handlePrev() {
+            if (state.isBreak) {
+                state.isBreak = false;
+                state.completedMinutes = state.emomX - 1;
+                state.currentSecond = 0;
+                syncExerciseState();
+                document.querySelector('.break-screen').classList.remove('active');
+                document.querySelector('.timer-screen').classList.add('active');
+                updateDisplay();
+            } else if (state.completedMinutes > 0) {
+                state.completedMinutes--;
+                state.currentSecond = 0;
+                syncExerciseState();
+                updateDisplay();
+            }
+        }
+
+        // ===== Wake Lock =====
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator && !state.wakeLock) {
+                    state.wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {
+                // Expected to fail on file:// URLs, works on HTTPS
+            }
+        }
+
+        async function releaseWakeLock() {
+            if (state.wakeLock) {
+                try {
+                    await state.wakeLock.release();
+                } catch (err) {
+                    console.log('Wake Lock release failed');
+                }
+                state.wakeLock = null;
+            }
+        }
+
+        // ===== Initialization =====
+        // Always start on setup screen
+        document.querySelector('.setup-screen').classList.add('active');
+        document.querySelector('.timer-screen').classList.remove('active');
+        document.querySelector('.break-screen').classList.remove('active');
+        document.querySelector('.pause-overlay').classList.remove('active');
+
+        // Reset progress dots
+        document.getElementById('progressDots').innerHTML = '';
+
+        loadConfig();
+
+        // Set gradient backgrounds for timer screens
+        const colors_list = [
+            { class: 'color-1a4a8a', hex: '#1a4a8a', dark: '#0d2644' },
+            { class: 'color-1a6b50', hex: '#1a6b50', dark: '#0d3828' },
+            { class: 'color-8a2a40', hex: '#8a2a40', dark: '#440d1f' },
+        ];
+
+        const timerScreen = document.querySelector('.timer-screen');
+        const originalSetBg = () => {
+            if (!state.isWorkingOut) return;
+            const numEx = state.currentPart === 1 ? 3 : 2;
+            const colorIndex = state.currentExerciseIndex % numEx;
+            const color = colors_list[colorIndex];
+            timerScreen.style.background = `linear-gradient(160deg, ${color.dark} 0%, ${color.hex} 50%, ${color.dark} 100%)`;
+        };
+
+        // Update timer screen background periodically
+        const bgInterval = setInterval(originalSetBg, 100);
+
+        // Pause observer
+        if ('wakeLock' in navigator) {
+            document.addEventListener('visibilitychange', async () => {
+                if (document.hidden) {
+                    if (state.wakeLock) {
+                        await releaseWakeLock();
+                    }
+                } else {
+                    if (state.isWorkingOut && !state.isPaused) {
+                        await requestWakeLock();
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
