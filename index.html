@@ -173,9 +173,14 @@
         }
 
         .next-weight {
-            font-size: 14px;
-            color: #b0b0b0;
-            margin-top: 15px;
+            font-size: 56px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 30px;
+        }
+
+        .next-weight .dim {
+            color: rgba(255, 255, 255, 0.3);
         }
 
         .progress-dots {
@@ -348,9 +353,9 @@
 
     <div class="timer-screen">
         <div class="timer-display">
+            <div class="next-weight" id="nextWeight"></div>
             <div class="weight-reps" id="weightReps"></div>
             <div class="timer-time" id="timerTime">0:00</div>
-            <div class="next-weight" id="nextWeight"></div>
         </div>
         <div class="progress-dots" id="progressDots"></div>
         <div class="nav-bar">
@@ -785,23 +790,19 @@ self.addEventListener('fetch', (event) => {
             const current = ex.current;
             const next = ex.next;
 
-            let weightRepsHTML = '';
-            if (current.weight === '0') {
-                weightRepsHTML = `<span class="reps">${current.reps}</span>`;
-            } else {
-                weightRepsHTML = `<span class="weight">${current.weight}</span> × <span class="reps">${current.reps}</span>`;
-            }
-            document.getElementById('weightReps').innerHTML = weightRepsHTML;
+            const curText = current.weight === '0' ? current.reps : `${current.weight} × ${current.reps}`;
 
             let nextHTML = '';
+            let weightRepsHTML = '';
             if (next && (next.weight !== current.weight || next.reps !== current.reps)) {
-                if (next.weight === '0') {
-                    nextHTML = `next: ${next.reps}`;
-                } else {
-                    nextHTML = `next: ${next.weight} × ${next.reps}`;
-                }
+                const nxtText = next.weight === '0' ? next.reps : `${next.weight} × ${next.reps}`;
+                nextHTML = `${curText} <span class="dim">→ ${nxtText}</span>`;
+                weightRepsHTML = '';
+            } else {
+                weightRepsHTML = curText;
             }
-            document.getElementById('nextWeight').textContent = nextHTML;
+            document.getElementById('weightReps').innerHTML = weightRepsHTML;
+            document.getElementById('nextWeight').innerHTML = nextHTML;
         }
 
         function updateProgressDots() {
