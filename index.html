@@ -917,14 +917,32 @@ self.addEventListener('fetch', (event) => {
 
         function handlePrev() {
             if (state.isBreak) {
+                // Break → back to last exercise of Part 1
                 state.isBreak = false;
+                state.currentPart = 1;
                 state.completedMinutes = state.emomX - 1;
                 state.currentSecond = 0;
                 syncExerciseState();
                 document.querySelector('.break-screen').classList.remove('active');
                 document.querySelector('.timer-screen').classList.add('active');
                 updateDisplay();
-            } else if (state.completedMinutes > 0) {
+            } else if (state.currentPart === 2 && state.completedMinutes === 0) {
+                // First exercise of Part 2 → back to break
+                state.isBreak = true;
+                state.breakMinute = 0;
+                state.currentSecond = 0;
+                document.querySelector('.timer-screen').classList.remove('active');
+                document.querySelector('.break-screen').classList.add('active');
+                updateDisplay();
+            } else if (state.completedMinutes === 0 && state.currentPart === 1) {
+                // First exercise of Part 1 → back to settings
+                clearInterval(timerInterval);
+                state.isWorkingOut = false;
+                state.setupComplete = false;
+                releaseWakeLock();
+                document.querySelector('.timer-screen').classList.remove('active');
+                document.querySelector('.setup-screen').classList.add('active');
+            } else {
                 state.completedMinutes--;
                 state.currentSecond = 0;
                 syncExerciseState();
