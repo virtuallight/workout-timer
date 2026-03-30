@@ -673,7 +673,7 @@ self.addEventListener('fetch', (event) => {
                             syncExerciseState();
                             document.querySelector('.break-screen').classList.remove('active');
                             document.querySelector('.timer-screen').classList.add('active');
-                            playBeep(false);
+                            playBeep(true);
                         }
                     } else {
                         state.completedMinutes++;
@@ -686,14 +686,14 @@ self.addEventListener('fetch', (event) => {
                                 state.breakMinute = 0;
                                 document.querySelector('.timer-screen').classList.remove('active');
                                 document.querySelector('.break-screen').classList.add('active');
-                                playBeep(false);
+                                playBeep(true);
                             } else {
                                 workoutComplete();
                                 return;
                             }
                         } else {
                             syncExerciseState();
-                            playBeep(false);
+                            playBeep(true);
                         }
                     }
                 }
