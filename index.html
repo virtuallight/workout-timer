@@ -201,38 +201,42 @@
 
         .nav-bar {
             position: absolute;
-            bottom: 0;
+            bottom: 30px;
             left: 0;
             right: 0;
             display: flex;
+            justify-content: center;
+            gap: 20px;
             z-index: 10;
-            height: 80px;
         }
 
         .nav-btn {
-            flex: 1;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: none;
+            background: rgba(255, 255, 255, 0.15);
             border: none;
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 13px;
-            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 22px;
+            font-weight: 600;
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
         }
 
         .nav-btn:active {
-            color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .nav-btn.dark {
-            color: rgba(0, 0, 0, 0.25);
+            background: rgba(0, 0, 0, 0.1);
+            color: rgba(0, 0, 0, 0.5);
         }
 
         .nav-btn.dark:active {
-            color: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.2);
         }
 
         .break-screen {
@@ -349,18 +353,18 @@
         </div>
         <div class="progress-dots" id="progressDots"></div>
         <div class="nav-bar">
-            <button class="nav-btn" id="prevBtn">← prev</button>
-            <button class="nav-btn" id="pauseBtn">pause</button>
-            <button class="nav-btn" id="nextBtn">next →</button>
+            <button class="nav-btn" id="prevBtn">‹</button>
+            <button class="nav-btn" id="pauseBtn">=</button>
+            <button class="nav-btn" id="nextBtn">›</button>
         </div>
     </div>
 
     <div class="break-screen">
         <div class="break-timer" id="breakTimer">0:00</div>
         <div class="nav-bar">
-            <button class="nav-btn dark" id="breakPrevBtn">← prev</button>
-            <button class="nav-btn dark" id="breakPauseBtn">pause</button>
-            <button class="nav-btn dark" id="breakNextBtn">next →</button>
+            <button class="nav-btn dark" id="breakPrevBtn">‹</button>
+            <button class="nav-btn dark" id="breakPauseBtn">=</button>
+            <button class="nav-btn dark" id="breakNextBtn">›</button>
         </div>
     </div>
 
