@@ -699,6 +699,26 @@ self.addEventListener('fetch', (event) => {
             timerInterval = setInterval(() => {
                 if (state.isPaused) return;
 
+                if (state.currentPart === 3) {
+                    // Part 3: single continuous block, count total seconds
+                    state.part3Elapsed++;
+                    const totalSeconds = state.part3Minutes * 60;
+                    if (state.part3Elapsed >= totalSeconds) {
+                        playBeep(true);
+                        workoutComplete();
+                        return;
+                    }
+                    // Beep only in last 3 seconds
+                    const remaining = totalSeconds - state.part3Elapsed;
+                    if (remaining === 3 || remaining === 2) {
+                        playBeep(false);
+                    } else if (remaining === 1) {
+                        playBeep(true);
+                    }
+                    updateDisplay();
+                    return;
+                }
+
                 state.currentSecond++;
                 if (state.currentSecond >= 60) {
                     state.currentSecond = 0;
@@ -724,13 +744,6 @@ self.addEventListener('fetch', (event) => {
                                 document.querySelector('.timer-screen').classList.add('active');
                                 playBeep(true);
                             }
-                        }
-                    } else if (state.currentPart === 3) {
-                        state.part3Elapsed++;
-                        if (state.part3Elapsed >= state.part3Minutes) {
-                            playBeep(true);
-                            workoutComplete();
-                            return;
                         }
                     } else {
                         state.completedMinutes++;
@@ -770,16 +783,7 @@ self.addEventListener('fetch', (event) => {
                     playBeep(true);
                 }
             } else if (state.currentPart === 3) {
-                // Only beep in the last 3 seconds of the final minute
-                if (state.part3Elapsed === state.part3Minutes - 1) {
-                    if (sec === 57) {
-                        playBeep(false);
-                    } else if (sec === 58) {
-                        playBeep(false);
-                    } else if (sec === 59) {
-                        playBeep(true);
-                    }
-                }
+                // Beeps handled in startTimer for Part 3
             } else {
                 if (sec === 57) {
                     playBeep(false);
@@ -822,9 +826,13 @@ self.addEventListener('fetch', (event) => {
                     breakTimerEl.classList.remove('countdown');
                 }
             } else if (state.currentPart === 3) {
-                const time = formatTime(state.part3Elapsed, state.currentSecond);
+                const mins = Math.floor(state.part3Elapsed / 60);
+                const secs = state.part3Elapsed % 60;
+                const time = formatTime(mins, secs);
                 timerEl.textContent = time;
-                if (isCounting && state.part3Elapsed === state.part3Minutes - 1) {
+                const totalSeconds = state.part3Minutes * 60;
+                const remaining = totalSeconds - state.part3Elapsed;
+                if (remaining <= 3) {
                     timerEl.classList.add('countdown');
                 } else {
                     timerEl.classList.remove('countdown');
@@ -980,13 +988,10 @@ self.addEventListener('fetch', (event) => {
                     document.querySelector('.timer-screen').classList.add('active');
                 }
             } else if (state.currentPart === 3) {
-                state.part3Elapsed++;
-                state.currentSecond = 0;
-                if (state.part3Elapsed >= state.part3Minutes) {
-                    playBeep(true);
-                    workoutComplete();
-                    return;
-                }
+                // Skip entire Part 3 → done
+                playBeep(true);
+                workoutComplete();
+                return;
             } else {
                 state.completedMinutes++;
                 state.currentSecond = 0;
@@ -1016,18 +1021,14 @@ self.addEventListener('fetch', (event) => {
                 document.querySelector('.break-screen').classList.remove('active');
                 document.querySelector('.timer-screen').classList.add('active');
                 updateDisplay();
-            } else if (state.currentPart === 3 && state.part3Elapsed === 0) {
-                // Start of Part 3 → back to break after Part 2
+            } else if (state.currentPart === 3) {
+                // Any point in Part 3 → back to break after Part 2
                 state.isBreak = true;
                 state.breakAfterPart = 2;
                 state.breakMinute = 0;
                 state.currentSecond = 0;
                 document.querySelector('.timer-screen').classList.remove('active');
                 document.querySelector('.break-screen').classList.add('active');
-                updateDisplay();
-            } else if (state.currentPart === 3) {
-                state.part3Elapsed--;
-                state.currentSecond = 0;
                 updateDisplay();
             } else if (state.currentPart === 2 && state.completedMinutes === 0) {
                 // First exercise of Part 2 → back to break after Part 1
