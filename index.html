@@ -432,6 +432,7 @@ self.addEventListener('fetch', (event) => {
             completedMinutes: 0,
             currentPart: 1,
             breakMinute: 0,
+            breakAfterPart: 0,
         };
 
         const colors = {
@@ -634,6 +635,7 @@ self.addEventListener('fetch', (event) => {
             state.currentPart = 1;
             state.completedMinutes = 0;
             state.breakMinute = 0;
+            state.breakAfterPart = 0;
             state.currentExerciseIndex = 0;
             state.currentMinute = 0;
             state.currentSecond = 0;
@@ -671,31 +673,33 @@ self.addEventListener('fetch', (event) => {
                     if (state.isBreak) {
                         state.breakMinute++;
                         if (state.breakMinute >= 2) {
-                            // Break complete → Part 2
-                            state.isBreak = false;
-                            state.currentPart = 2;
-                            state.completedMinutes = 0;
-                            syncExerciseState();
-                            document.querySelector('.break-screen').classList.remove('active');
-                            document.querySelector('.timer-screen').classList.add('active');
-                            playBeep(true);
+                            if (state.breakAfterPart === 1) {
+                                // Break after Part 1 → Part 2
+                                state.isBreak = false;
+                                state.currentPart = 2;
+                                state.completedMinutes = 0;
+                                syncExerciseState();
+                                document.querySelector('.break-screen').classList.remove('active');
+                                document.querySelector('.timer-screen').classList.add('active');
+                                playBeep(true);
+                            } else {
+                                // Break after Part 2 → done
+                                workoutComplete();
+                                return;
+                            }
                         }
                     } else {
                         state.completedMinutes++;
                         const totalForPart = state.currentPart === 1 ? state.emomX : state.emomY;
 
                         if (state.completedMinutes >= totalForPart) {
-                            if (state.currentPart === 1) {
-                                // Part 1 done → break
-                                state.isBreak = true;
-                                state.breakMinute = 0;
-                                document.querySelector('.timer-screen').classList.remove('active');
-                                document.querySelector('.break-screen').classList.add('active');
-                                playBeep(true);
-                            } else {
-                                workoutComplete();
-                                return;
-                            }
+                            // Part done → break
+                            state.isBreak = true;
+                            state.breakAfterPart = state.currentPart;
+                            state.breakMinute = 0;
+                            document.querySelector('.timer-screen').classList.remove('active');
+                            document.querySelector('.break-screen').classList.add('active');
+                            playBeep(true);
                         } else {
                             syncExerciseState();
                             playBeep(true);
@@ -886,29 +890,31 @@ self.addEventListener('fetch', (event) => {
 
         function handleNext() {
             if (state.isBreak) {
-                // Skip break → Part 2
-                state.isBreak = false;
-                state.currentPart = 2;
-                state.completedMinutes = 0;
-                state.currentSecond = 0;
-                syncExerciseState();
-                document.querySelector('.break-screen').classList.remove('active');
-                document.querySelector('.timer-screen').classList.add('active');
+                if (state.breakAfterPart === 1) {
+                    // Skip break → Part 2
+                    state.isBreak = false;
+                    state.currentPart = 2;
+                    state.completedMinutes = 0;
+                    state.currentSecond = 0;
+                    syncExerciseState();
+                    document.querySelector('.break-screen').classList.remove('active');
+                    document.querySelector('.timer-screen').classList.add('active');
+                } else {
+                    // Skip break after Part 2 → done
+                    workoutComplete();
+                    return;
+                }
             } else {
                 state.completedMinutes++;
                 state.currentSecond = 0;
                 const totalForPart = state.currentPart === 1 ? state.emomX : state.emomY;
 
                 if (state.completedMinutes >= totalForPart) {
-                    if (state.currentPart === 1) {
-                        state.isBreak = true;
-                        state.breakMinute = 0;
-                        document.querySelector('.timer-screen').classList.remove('active');
-                        document.querySelector('.break-screen').classList.add('active');
-                    } else {
-                        workoutComplete();
-                        return;
-                    }
+                    state.isBreak = true;
+                    state.breakAfterPart = state.currentPart;
+                    state.breakMinute = 0;
+                    document.querySelector('.timer-screen').classList.remove('active');
+                    document.querySelector('.break-screen').classList.add('active');
                 } else {
                     syncExerciseState();
                 }
@@ -918,18 +924,19 @@ self.addEventListener('fetch', (event) => {
 
         function handlePrev() {
             if (state.isBreak) {
-                // Break → back to last exercise of Part 1
+                // Break → back to last exercise of that part
                 state.isBreak = false;
-                state.currentPart = 1;
-                state.completedMinutes = state.emomX - 1;
+                state.currentPart = state.breakAfterPart;
+                state.completedMinutes = (state.breakAfterPart === 1 ? state.emomX : state.emomY) - 1;
                 state.currentSecond = 0;
                 syncExerciseState();
                 document.querySelector('.break-screen').classList.remove('active');
                 document.querySelector('.timer-screen').classList.add('active');
                 updateDisplay();
             } else if (state.currentPart === 2 && state.completedMinutes === 0) {
-                // First exercise of Part 2 → back to break
+                // First exercise of Part 2 → back to break after Part 1
                 state.isBreak = true;
+                state.breakAfterPart = 1;
                 state.breakMinute = 0;
                 state.currentSecond = 0;
                 document.querySelector('.timer-screen').classList.remove('active');
