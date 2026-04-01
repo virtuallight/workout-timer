@@ -352,7 +352,7 @@
                 <input type="number" id="part3Minutes" value="10" min="1" max="60">
             </div>
 
-            <input type="text" class="exercise-input" id="part3Text" style="background: rgba(255, 255, 255, 0.06); color: #ddd;">
+            <textarea class="exercise-input" id="part3Text" rows="3" style="background: rgba(255, 255, 255, 0.06); color: #ddd; resize: none;"></textarea>
         </div>
 
         <button class="start-button" id="startButton">Start</button>
@@ -856,7 +856,9 @@ self.addEventListener('fetch', (event) => {
             if (state.isBreak) return;
 
             if (state.currentPart === 3) {
-                document.getElementById('weightReps').textContent = state.part3Text;
+                const wrEl = document.getElementById('weightReps');
+                wrEl.innerHTML = state.part3Text.replace(/\n/g, '<br>');
+                wrEl.style.fontSize = '24px';
                 document.getElementById('nextWeight').textContent = '';
                 return;
             }
@@ -868,6 +870,7 @@ self.addEventListener('fetch', (event) => {
                 return;
             }
 
+            document.getElementById('weightReps').style.fontSize = '';
             const current = ex.current;
             const next = ex.next;
 
