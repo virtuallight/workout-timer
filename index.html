@@ -877,7 +877,7 @@ self.addEventListener('fetch', (event) => {
             let weightRepsHTML = '';
             if (next && (next.weight !== current.weight || next.reps !== current.reps)) {
                 const nxtText = next.weight === '0' ? next.reps : `${next.weight} × ${next.reps}`;
-                nextHTML = `${curText} <span class="dim">→ ${nxtText}</span>`;
+                nextHTML = `${curText}<br><span class="dim">${nxtText}</span>`;
                 weightRepsHTML = '';
             } else {
                 weightRepsHTML = curText;
