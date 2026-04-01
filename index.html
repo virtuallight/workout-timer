@@ -460,10 +460,16 @@ self.addEventListener('fetch', (event) => {
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
         }
 
         function beep(frequency = 800, duration = 150, volume = 0.3) {
             if (!audioContext) return;
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
             const now = audioContext.currentTime;
             const osc = audioContext.createOscillator();
             const gain = audioContext.createGain();
@@ -1011,20 +1017,21 @@ self.addEventListener('fetch', (event) => {
         // Update timer screen background periodically
         const bgInterval = setInterval(originalSetBg, 100);
 
-        // Pause observer
-        if ('wakeLock' in navigator) {
-            document.addEventListener('visibilitychange', async () => {
-                if (document.hidden) {
-                    if (state.wakeLock) {
-                        await releaseWakeLock();
-                    }
-                } else {
-                    if (state.isWorkingOut && !state.isPaused) {
-                        await requestWakeLock();
-                    }
+        // Visibility change: resume audio + wake lock
+        document.addEventListener('visibilitychange', async () => {
+            if (document.hidden) {
+                if (state.wakeLock) {
+                    await releaseWakeLock();
                 }
-            });
-        }
+            } else {
+                if (state.isWorkingOut && !state.isPaused) {
+                    await requestWakeLock();
+                }
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            }
+        });
     </script>
 </body>
 </html>
