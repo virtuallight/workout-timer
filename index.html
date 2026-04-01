@@ -345,6 +345,14 @@
 
             <input type="text" class="exercise-input" id="exercise4" data-color="1a4a8a" style="background:#1a4a8a; color:#fff; border-color:#1a4a8a;">
             <input type="text" class="exercise-input" id="exercise5" data-color="1a6b50" style="background:#1a6b50; color:#fff; border-color:#1a6b50;">
+
+            <div class="divider"></div>
+
+            <div class="emom-number-field">
+                <input type="number" id="part3Minutes" value="10" min="1" max="60">
+            </div>
+
+            <input type="text" class="exercise-input" id="part3Text" style="background: rgba(255, 255, 255, 0.06); color: #ddd;">
         </div>
 
         <button class="start-button" id="startButton">Start</button>
@@ -433,6 +441,9 @@ self.addEventListener('fetch', (event) => {
             currentPart: 1,
             breakMinute: 0,
             breakAfterPart: 0,
+            part3Minutes: 10,
+            part3Text: '',
+            part3Elapsed: 0,
         };
 
         const colors = {
@@ -559,6 +570,8 @@ self.addEventListener('fetch', (event) => {
                 const config = JSON.parse(saved);
                 document.getElementById('emomX').value = config.emomX || 21;
                 document.getElementById('emomY').value = config.emomY || 14;
+                document.getElementById('part3Minutes').value = config.part3Minutes || 10;
+                document.getElementById('part3Text').value = config.part3Text || '';
                 for (let i = 1; i <= 5; i++) {
                     const el = document.getElementById(`exercise${i}`);
                     if (el) el.value = config[`exercise${i}`] || '';
@@ -570,6 +583,8 @@ self.addEventListener('fetch', (event) => {
             const config = {
                 emomX: parseInt(document.getElementById('emomX').value),
                 emomY: parseInt(document.getElementById('emomY').value),
+                part3Minutes: parseInt(document.getElementById('part3Minutes').value),
+                part3Text: document.getElementById('part3Text').value,
             };
             for (let i = 1; i <= 5; i++) {
                 config[`exercise${i}`] = document.getElementById(`exercise${i}`).value;
@@ -589,6 +604,8 @@ self.addEventListener('fetch', (event) => {
 
         document.getElementById('emomX').addEventListener('change', saveConfig);
         document.getElementById('emomY').addEventListener('change', saveConfig);
+        document.getElementById('part3Minutes').addEventListener('change', saveConfig);
+        document.getElementById('part3Text').addEventListener('change', saveConfig);
         exerciseInputs.forEach(input => {
             input.addEventListener('change', saveConfig);
         });
@@ -602,6 +619,8 @@ self.addEventListener('fetch', (event) => {
             const ex3 = document.getElementById('exercise3').value;
             const ex4 = document.getElementById('exercise4').value;
             const ex5 = document.getElementById('exercise5').value;
+            const p3Min = parseInt(document.getElementById('part3Minutes').value);
+            const p3Text = document.getElementById('part3Text').value;
 
             const errorEl = document.getElementById('errorMessage');
             errorEl.textContent = '';
@@ -616,6 +635,11 @@ self.addEventListener('fetch', (event) => {
                 return;
             }
 
+            if (!p3Min || p3Min < 1 || !Number.isInteger(p3Min)) {
+                errorEl.textContent = 'Part 3 minutes must be a positive integer';
+                return;
+            }
+
             if (!ex1 || !ex2 || !ex3 || !ex4 || !ex5) {
                 errorEl.textContent = 'All exercises must have notation';
                 return;
@@ -623,6 +647,8 @@ self.addEventListener('fetch', (event) => {
 
             state.emomX = emomX;
             state.emomY = emomY;
+            state.part3Minutes = p3Min;
+            state.part3Text = p3Text;
             state.exercises = [ex1, ex2, ex3, ex4, ex5];
             state.parsedExercises = state.exercises.map(parseExerciseNotation);
 
@@ -642,6 +668,7 @@ self.addEventListener('fetch', (event) => {
             state.completedMinutes = 0;
             state.breakMinute = 0;
             state.breakAfterPart = 0;
+            state.part3Elapsed = 0;
             state.currentExerciseIndex = 0;
             state.currentMinute = 0;
             state.currentSecond = 0;
@@ -689,10 +716,21 @@ self.addEventListener('fetch', (event) => {
                                 document.querySelector('.timer-screen').classList.add('active');
                                 playBeep(true);
                             } else {
-                                // Break after Part 2 → done
-                                workoutComplete();
-                                return;
+                                // Break after Part 2 → Part 3
+                                state.isBreak = false;
+                                state.currentPart = 3;
+                                state.part3Elapsed = 0;
+                                document.querySelector('.break-screen').classList.remove('active');
+                                document.querySelector('.timer-screen').classList.add('active');
+                                playBeep(true);
                             }
+                        }
+                    } else if (state.currentPart === 3) {
+                        state.part3Elapsed++;
+                        if (state.part3Elapsed >= state.part3Minutes) {
+                            playBeep(true);
+                            workoutComplete();
+                            return;
                         }
                     } else {
                         state.completedMinutes++;
@@ -730,6 +768,17 @@ self.addEventListener('fetch', (event) => {
                     playBeep(false);
                 } else if (sec === 59 && state.breakMinute === 1) {
                     playBeep(true);
+                }
+            } else if (state.currentPart === 3) {
+                // Only beep in the last 3 seconds of the final minute
+                if (state.part3Elapsed === state.part3Minutes - 1) {
+                    if (sec === 57) {
+                        playBeep(false);
+                    } else if (sec === 58) {
+                        playBeep(false);
+                    } else if (sec === 59) {
+                        playBeep(true);
+                    }
                 }
             } else {
                 if (sec === 57) {
@@ -772,6 +821,14 @@ self.addEventListener('fetch', (event) => {
                 } else {
                     breakTimerEl.classList.remove('countdown');
                 }
+            } else if (state.currentPart === 3) {
+                const time = formatTime(state.part3Elapsed, state.currentSecond);
+                timerEl.textContent = time;
+                if (isCounting && state.part3Elapsed === state.part3Minutes - 1) {
+                    timerEl.classList.add('countdown');
+                } else {
+                    timerEl.classList.remove('countdown');
+                }
             } else {
                 const time = formatTime(0, state.currentSecond);
                 timerEl.textContent = time;
@@ -789,6 +846,12 @@ self.addEventListener('fetch', (event) => {
 
         function updateWeightReps() {
             if (state.isBreak) return;
+
+            if (state.currentPart === 3) {
+                document.getElementById('weightReps').textContent = state.part3Text;
+                document.getElementById('nextWeight').textContent = '';
+                return;
+            }
 
             const ex = getExerciseAtIndex(state.currentExerciseIndex);
             if (!ex) {
@@ -818,6 +881,8 @@ self.addEventListener('fetch', (event) => {
         function updateProgressDots() {
             const dotsContainer = document.getElementById('progressDots');
             dotsContainer.innerHTML = '';
+
+            if (state.currentPart === 3) return;
 
             const totalDots = state.currentPart === 1 ? state.emomX : state.emomY;
             const numRows = state.currentPart === 1 ? 3 : 2;
@@ -906,7 +971,19 @@ self.addEventListener('fetch', (event) => {
                     document.querySelector('.break-screen').classList.remove('active');
                     document.querySelector('.timer-screen').classList.add('active');
                 } else {
-                    // Skip break after Part 2 → done
+                    // Skip break after Part 2 → Part 3
+                    state.isBreak = false;
+                    state.currentPart = 3;
+                    state.part3Elapsed = 0;
+                    state.currentSecond = 0;
+                    document.querySelector('.break-screen').classList.remove('active');
+                    document.querySelector('.timer-screen').classList.add('active');
+                }
+            } else if (state.currentPart === 3) {
+                state.part3Elapsed++;
+                state.currentSecond = 0;
+                if (state.part3Elapsed >= state.part3Minutes) {
+                    playBeep(true);
                     workoutComplete();
                     return;
                 }
@@ -938,6 +1015,19 @@ self.addEventListener('fetch', (event) => {
                 syncExerciseState();
                 document.querySelector('.break-screen').classList.remove('active');
                 document.querySelector('.timer-screen').classList.add('active');
+                updateDisplay();
+            } else if (state.currentPart === 3 && state.part3Elapsed === 0) {
+                // Start of Part 3 → back to break after Part 2
+                state.isBreak = true;
+                state.breakAfterPart = 2;
+                state.breakMinute = 0;
+                state.currentSecond = 0;
+                document.querySelector('.timer-screen').classList.remove('active');
+                document.querySelector('.break-screen').classList.add('active');
+                updateDisplay();
+            } else if (state.currentPart === 3) {
+                state.part3Elapsed--;
+                state.currentSecond = 0;
                 updateDisplay();
             } else if (state.currentPart === 2 && state.completedMinutes === 0) {
                 // First exercise of Part 2 → back to break after Part 1
@@ -1008,6 +1098,10 @@ self.addEventListener('fetch', (event) => {
         const timerScreen = document.querySelector('.timer-screen');
         const originalSetBg = () => {
             if (!state.isWorkingOut) return;
+            if (state.currentPart === 3) {
+                timerScreen.style.background = `linear-gradient(160deg, #1a1a2e 0%, #2a2a3e 50%, #1a1a2e 100%)`;
+                return;
+            }
             const numEx = state.currentPart === 1 ? 3 : 2;
             const colorIndex = state.currentExerciseIndex % numEx;
             const color = colors_list[colorIndex];
