@@ -564,19 +564,26 @@ self.addEventListener('fetch', (event) => {
         }
 
         // ===== Load Configuration =====
-        function loadConfig() {
-            const saved = localStorage.getItem('workoutConfig');
-            if (saved) {
-                const config = JSON.parse(saved);
-                document.getElementById('emomX').value = config.emomX || 21;
-                document.getElementById('emomY').value = config.emomY || 14;
-                document.getElementById('part3Minutes').value = config.part3Minutes || 10;
-                document.getElementById('part3Text').value = config.part3Text || '';
-                for (let i = 1; i <= 5; i++) {
-                    const el = document.getElementById(`exercise${i}`);
-                    if (el) el.value = config[`exercise${i}`] || '';
-                }
+        function applyConfig(config) {
+            document.getElementById('emomX').value = config.emomX || 21;
+            document.getElementById('emomY').value = config.emomY || 14;
+            document.getElementById('part3Minutes').value = config.part3Minutes || 10;
+            document.getElementById('part3Text').value = config.part3Text || '';
+            for (let i = 1; i <= 5; i++) {
+                const el = document.getElementById(`exercise${i}`);
+                if (el) el.value = config[`exercise${i}`] || '';
             }
+        }
+
+        function loadConfig() {
+            fetch('config.json')
+                .then(r => r.json())
+                .then(config => applyConfig(config))
+                .catch(() => {
+                    // Fall back to localStorage
+                    const saved = localStorage.getItem('workoutConfig');
+                    if (saved) applyConfig(JSON.parse(saved));
+                });
         }
 
         function saveConfig() {
