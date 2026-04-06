@@ -393,6 +393,7 @@
     </div>
 
 
+    <script src="config.js"></script>
     <script>
         // ===== Unregister old service workers =====
         if ('serviceWorker' in navigator) {
@@ -557,13 +558,19 @@
         }
 
         function loadConfig() {
+            // Try fetch first (works on HTTPS / GitHub Pages)
             fetch('config.json', { cache: 'no-store' })
                 .then(r => {
                     if (!r.ok) throw new Error('not found');
                     return r.json();
                 })
                 .then(config => applyConfig(config))
-                .catch(() => {});
+                .catch(() => {
+                    // Fallback for file:// — load via script tag
+                    if (window.WORKOUT_CONFIG) {
+                        applyConfig(window.WORKOUT_CONFIG);
+                    }
+                });
         }
 
         // ===== Setup Screen Event Listeners =====
