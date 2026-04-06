@@ -582,24 +582,7 @@ self.addEventListener('fetch', (event) => {
                     return r.json();
                 })
                 .then(config => applyConfig(config))
-                .catch(() => {
-                    // Fall back to localStorage
-                    const saved = localStorage.getItem('workoutConfig');
-                    if (saved) applyConfig(JSON.parse(saved));
-                });
-        }
-
-        function saveConfig() {
-            const config = {
-                emomX: parseInt(document.getElementById('emomX').value),
-                emomY: parseInt(document.getElementById('emomY').value),
-                part3Minutes: parseInt(document.getElementById('part3Minutes').value),
-                part3Text: document.getElementById('part3Text').value,
-            };
-            for (let i = 1; i <= 5; i++) {
-                config[`exercise${i}`] = document.getElementById(`exercise${i}`).value;
-            }
-            localStorage.setItem('workoutConfig', JSON.stringify(config));
+                .catch(() => {});
         }
 
         // ===== Setup Screen Event Listeners =====
@@ -612,13 +595,6 @@ self.addEventListener('fetch', (event) => {
             });
         });
 
-        document.getElementById('emomX').addEventListener('change', saveConfig);
-        document.getElementById('emomY').addEventListener('change', saveConfig);
-        document.getElementById('part3Minutes').addEventListener('change', saveConfig);
-        document.getElementById('part3Text').addEventListener('change', saveConfig);
-        exerciseInputs.forEach(input => {
-            input.addEventListener('change', saveConfig);
-        });
 
         // ===== Start Button =====
         document.getElementById('startButton').addEventListener('click', () => {
