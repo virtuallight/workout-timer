@@ -394,37 +394,14 @@
 
 
     <script>
-        // ===== PWA Service Worker Registration =====
+        // ===== Unregister old service workers =====
         if ('serviceWorker' in navigator) {
-            const swCode = `
-const CACHE_NAME = 'workout-timer-v2';
-const urlsToCache = ['/'];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME));
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(Promise.resolve());
-});
-
-self.addEventListener('fetch', (event) => {
-  if (event.request.url.includes('config.json')) {
-    event.respondWith(fetch(event.request).catch(() => new Response('{}')));
-    return;
-  }
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request).catch(() => {
-        return new Response('Offline - page not in cache');
-      });
-    })
-  );
-});
-            `;
-            const blob = new Blob([swCode], { type: 'application/javascript' });
-            const swUrl = URL.createObjectURL(blob);
-            navigator.serviceWorker.register(swUrl).catch(() => {});
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                regs.forEach(r => r.unregister());
+            });
+            caches.keys().then(names => {
+                names.forEach(name => caches.delete(name));
+            });
         }
 
         // ===== App State =====
