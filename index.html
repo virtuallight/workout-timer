@@ -576,8 +576,11 @@ self.addEventListener('fetch', (event) => {
         }
 
         function loadConfig() {
-            fetch('config.json')
-                .then(r => r.json())
+            fetch('config.json?t=' + Date.now())
+                .then(r => {
+                    if (!r.ok) throw new Error('not found');
+                    return r.json();
+                })
                 .then(config => applyConfig(config))
                 .catch(() => {
                     // Fall back to localStorage
