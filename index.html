@@ -397,7 +397,7 @@
         // ===== PWA Service Worker Registration =====
         if ('serviceWorker' in navigator) {
             const swCode = `
-const CACHE_NAME = 'workout-timer-v1';
+const CACHE_NAME = 'workout-timer-v2';
 const urlsToCache = ['/'];
 
 self.addEventListener('install', (event) => {
@@ -409,6 +409,10 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  if (event.request.url.includes('config.json')) {
+    event.respondWith(fetch(event.request).catch(() => new Response('{}')));
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request).catch(() => {
@@ -576,7 +580,7 @@ self.addEventListener('fetch', (event) => {
         }
 
         function loadConfig() {
-            fetch('config.json?t=' + Date.now())
+            fetch('config.json', { cache: 'no-store' })
                 .then(r => {
                     if (!r.ok) throw new Error('not found');
                     return r.json();
