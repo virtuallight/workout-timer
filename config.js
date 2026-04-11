@@ -7,5 +7,5 @@ window.WORKOUT_CONFIG = {
   "exercise2": "0*8+8*7",
   "exercise3": "0*12/12*7",
   "exercise4": "0*8*7",
-  "exercise5": "20*8*1 25*8*1 30*8*1 35*8*3"
+  "exercise5": "20*8*1 25*8*1 30*8*1 35*8*4"
 };
